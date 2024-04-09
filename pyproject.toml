@@ -18,7 +18,10 @@ langserve = "^0.0.51"
 fastapi = "^0.110.1"
 sse-starlette = "^2.1.0"
 flask-cors = "^4.0.0"
+<<<<<<< HEAD
 twilio = "^9.0.4"
+=======
+>>>>>>> df2971f3a878e01d27ac6e0eed83c20d727e8872
 
 
 [build-system]

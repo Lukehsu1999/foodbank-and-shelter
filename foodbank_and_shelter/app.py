@@ -32,7 +32,7 @@ prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You're an assistant who's good. Respond in 20 words or fewer",
+            "Build an SMS chatbot for homeless people to find the nearest food center or taxes help or financial help or medical assistance. Use a session ID to remember users. Keep responses under 280 characters, clear, and helpful. Be kind, harmless, and filter any inappropriate content. Aim to assist quickly. When giving details on location, give phone number as well.",
         ),
         MessagesPlaceholder(variable_name="history"),
         ("human", "{input}"),
