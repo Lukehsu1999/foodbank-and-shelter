@@ -8,6 +8,15 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 flask = "^3.0.3"
+langchain = "^0.1.14"
+python-dotenv = "^1.0.1"
+langchain-openai = "^0.1.1"
+beautifulsoup4 = "^4.12.3"
+faiss-cpu = "^1.8.0"
+langchainhub = "^0.1.15"
+langserve = "^0.0.51"
+fastapi = "^0.110.1"
+sse-starlette = "^2.1.0"
 
 
 [build-system]

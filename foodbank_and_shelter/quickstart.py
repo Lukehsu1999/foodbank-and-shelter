@@ -15,11 +15,19 @@ from langchain.chains import create_retrieval_chain
 from langchain.chains import create_history_aware_retriever
 from langchain_core.prompts import MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
+# for agent with tools
+from langchain.tools.retriever import create_retriever_tool
+from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_openai import ChatOpenAI
+from langchain import hub
+from langchain.agents import create_openai_functions_agent
+from langchain.agents import AgentExecutor
 
 load_dotenv()
 LANGCHAIN_TRACING_V2 = os.getenv('LANGCHAIN_TRACING_V2')
 LANGCHAIN_API_KEY = os.getenv('LANGCHAIN_API_KEY')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+TAVILY_API_KEY = os.getenv('TAVILY_API_KEY')
 
 # set up llm
 llm = ChatOpenAI(api_key=OPENAI_API_KEY)
@@ -83,10 +91,10 @@ prompt = ChatPromptTemplate.from_messages([
 retriever_chain = create_history_aware_retriever(llm, retriever, prompt)
 
 chat_history = [HumanMessage(content="Can LangSmith help test my LLM applications?"), AIMessage(content="Yes!")]
-print(retriever_chain.invoke({
-    "chat_history": chat_history,
-    "input": "Tell me how"
-}))
+# print(retriever_chain.invoke({
+#     "chat_history": chat_history,
+#     "input": "Tell me how"
+# }))
 
 prompt = ChatPromptTemplate.from_messages([
     ("system", "Answer the user's questions based on the below context:\n\n{context}"),
@@ -98,7 +106,31 @@ document_chain = create_stuff_documents_chain(llm, prompt)
 retrieval_chain = create_retrieval_chain(retriever_chain, document_chain)
 
 chat_history = [HumanMessage(content="Can LangSmith help test my LLM applications?"), AIMessage(content="Yes!")]
-retrieval_chain.invoke({
-    "chat_history": chat_history,
-    "input": "Tell me how"
-})
+# retrieval_chain.invoke({
+#     "chat_history": chat_history,
+#     "input": "Tell me how"
+# })
+
+# Part 4: set up agent with tools
+# retriever tool
+retriever_tool = create_retriever_tool(
+    retriever,
+    "langsmith_search",
+    "Search for information about LangSmith. For any questions about LangSmith, you must use this tool!",
+)
+# search tool
+search = TavilySearchResults(api_key=TAVILY_API_KEY)
+
+tools = [retriever_tool, search]
+
+# Get the prompt to use - you can modify this!
+prompt = hub.pull("hwchase17/openai-functions-agent")
+
+# You need to set OPENAI_API_KEY environment variable or pass it as argument `api_key`.
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+agent = create_openai_functions_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+#print(agent_executor.invoke({"input": "how can langsmith help with testing?"}))
+print(agent_executor.invoke({"input": "what are some opened shelters for homeless in NY?"}))
+#print(agent_executor.invoke({"input": "what time is it in New York?"}))
