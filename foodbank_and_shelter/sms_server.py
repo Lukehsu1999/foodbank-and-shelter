@@ -1,3 +1,4 @@
+# This is just for testing
 # Steps to reproduce: https://www.twilio.com/docs/sms/tutorials/how-to-receive-and-reply/python
 # 1. Run the server
 # 2. Open a new terminal, expose the port through ngrok
@@ -12,8 +13,15 @@ app = Flask(__name__)
 def sms_reply():
     """Respond to incoming calls with a simple text message."""
     # Start our TwiML response
-    resp = MessagingResponse()
+    request_dict = dict(request.values)
+    print("Request dictionary: ", request_dict)
+    userId = request_dict['From']
+    message = request_dict['Body']
+    print("From: "+str(userId)+" Message: "+str(message))
 
+    resp = MessagingResponse()
+    
+    # need to send Andrew incoming_message and number
     # Add a message
     resp.message("The Robots are coming! Head for the hills!")
 

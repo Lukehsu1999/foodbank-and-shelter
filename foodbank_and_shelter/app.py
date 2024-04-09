@@ -15,6 +15,7 @@ from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.output_parsers import StrOutputParser
+from twilio.twiml.messaging_response import MessagingResponse
 
 load_dotenv()
 LANGCHAIN_TRACING_V2 = os.getenv('LANGCHAIN_TRACING_V2')
@@ -87,6 +88,24 @@ def history():
     history = get_session_history(session_id)
     print('history:', history.messages)
     return str(history.messages)
+
+@app.route("/sms", methods=['GET', 'POST'])
+def sms_reply():
+    """Respond to incoming calls with a simple text message."""
+    # Start our TwiML response
+    request_dict = dict(request.values)
+    print("Request dictionary: ", request_dict)
+    userId = request_dict['From']
+    message = request_dict['Body']
+    print("From: "+str(userId)+" Message: "+str(message))
+
+    resp = MessagingResponse()
+    output = chat(userId, message)
+    # need to send Andrew incoming_message and number
+    # Add a message
+    resp.message(output)
+
+    return str(resp)
 
 if __name__ == '__main__':
     # chat('1', 'My name is John')
