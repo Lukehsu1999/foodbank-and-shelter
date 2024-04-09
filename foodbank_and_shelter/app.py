@@ -1,3 +1,10 @@
+'''
+Check out this for in-memory chat history storage: https://python.langchain.com/docs/expression_language/how_to/message_history/
+Everytime you terminate the server, the chat history will be lost.
+However, it is able to differentiate between different users(sessions) and store their chat history separately.
+'''
+
+
 from flask import Flask, request
 from dotenv import load_dotenv
 import os
