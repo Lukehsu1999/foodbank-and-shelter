@@ -17,6 +17,8 @@ langchainhub = "^0.1.15"
 langserve = "^0.0.51"
 fastapi = "^0.110.1"
 sse-starlette = "^2.1.0"
+flask-cors = "^4.0.0"
+twilio = "^9.0.4"
 
 
 [build-system]
