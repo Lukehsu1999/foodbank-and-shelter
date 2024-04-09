@@ -35,10 +35,16 @@ chain = prompt | llm | output_parser
 #print(chain.invoke({"input": "how can langsmith help with testing?"}))
 
 # set up retriever
+# if we are fetching documents from web
 loader = WebBaseLoader("https://docs.smith.langchain.com/user_guide")
 docs = loader.load()
-embeddings = OpenAIEmbeddings()
+# if we are fetching documents locally
+# with open("./local_text.txt", "r", encoding="utf-8") as file:
+#     local_docs_content = file.read()
+# docs = [Document(page_content=local_docs_content)]
 
+
+embeddings = OpenAIEmbeddings()
 text_splitter = RecursiveCharacterTextSplitter()
 documents = text_splitter.split_documents(docs)
 vector = FAISS.from_documents(documents, embeddings)
