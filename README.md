@@ -1,3 +1,5 @@
+Watch a Demo Video here: https://youtu.be/D8QwugQbK5Q
+
 1. Run webserver
 
 To run, run `poetry run python app.py`
