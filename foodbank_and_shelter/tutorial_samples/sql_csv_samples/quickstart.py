@@ -12,6 +12,7 @@ from operator import itemgetter
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
+from langchain_community.agent_toolkits import create_sql_agent
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -38,22 +39,31 @@ write_query = create_sql_query_chain(llm, db)
 # chain.invoke({"question": "How many employees are there"})
 
 
-# 4. Output Parser
-answer_prompt = PromptTemplate.from_template(
-    """Given the following user question, corresponding SQL query, and SQL result, answer the user question.
+# 4. Question Answering
+# answer_prompt = PromptTemplate.from_template(
+#     """Given the following user question, corresponding SQL query, and SQL result, answer the user question.
 
-Question: {question}
-SQL Query: {query}
-SQL Result: {result}
-Answer: """
-)
+# Question: {question}
+# SQL Query: {query}
+# SQL Result: {result}
+# Answer: """
+# )
 
-answer = answer_prompt | llm | StrOutputParser()
-chain = (
-    RunnablePassthrough.assign(query=write_query).assign(
-        result=itemgetter("query") | execute_query
-    )
-    | answer
-)
+# answer = answer_prompt | llm | StrOutputParser()
+# chain = (
+#     RunnablePassthrough.assign(query=write_query).assign(
+#         result=itemgetter("query") | execute_query
+#     )
+#     | answer
+# )
 
-print(chain.invoke({"question": "How many employees are there"}))
+# print(chain.invoke({"question": "How many employees are there"}))
+
+# 5. Agent
+agent_executor = create_sql_agent(llm, db=db, agent_type="openai-tools", verbose=True)
+# print(agent_executor.invoke(
+#     {
+#         "input": "List the total sales per country. Which country's customers spent the most?"
+#     }
+# ))
+print(agent_executor.invoke({"input": "Describe the playlisttrack table"}))
