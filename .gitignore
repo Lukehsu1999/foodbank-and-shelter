@@ -1,6 +1,8 @@
 bobbyserverkey.pem
 Chinook_Sqlite.sql
 Chinook.db
+titanic.csv
+titanic.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
