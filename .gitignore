@@ -1,4 +1,6 @@
 bobbyserverkey.pem
+Chinook_Sqlite.sql
+Chinook.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
