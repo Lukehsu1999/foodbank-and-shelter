@@ -21,6 +21,7 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_community.agent_toolkits import create_sql_agent
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import SystemMessage
+from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
 
 load_dotenv()
 LANGCHAIN_API_KEY = os.getenv('LANGCHAIN_API_KEY')
@@ -41,6 +42,26 @@ Only use the given tools. Only use the information returned by the tools to cons
 You MUST double check your query before executing it. If you get an error while executing a query, rewrite the query and try again.
 DO NOT make any DML statements (INSERT, UPDATE, DELETE, DROP etc.) to the database.
 If user asks to edit the database, return cannot edit the database""")
+
+update_system_message = SystemMessage(
+    content="""You are an agent designed to interact with a SQL database.
+    First check the user's phone number {phone_number} and if they are in the database, if not, reject. If yes, return the pantry information associated with that phone number""")
+
+update_prompt = ChatPromptTemplate.from_messages(
+    [
+        update_system_message,
+        ("human", "{input}"),
+        MessagesPlaceholder("agent_scratchpad")
+    ]
+)
+
+update_agent = create_sql_agent(
+    llm=llm,
+    db=db,
+    prompt=update_prompt,
+    verbose=True,
+    agent_type="openai-tools",
+)
 
 query_prompt = ChatPromptTemplate.from_messages(
     [
@@ -80,6 +101,19 @@ app = Flask(__name__)
 # store = {}
 
 # support functions
+def check_phone_number(phone_number, db):
+    print("Checking phone number: ", phone_number)
+    # Define the SQL query to check if the phone number exists and get permissions
+    query = f"SELECT * FROM Foodpantry WHERE PhoneNumber = '{phone_number}'"
+    
+    # Execute the query (assuming you have a function to execute queries and return results)
+    results = db.run(query)
+    print(results)
+    # Check if the phone number exists and has the necessary permissions
+    if results:
+        return True
+    else:
+        return False, "You do not have permission to edit the database."
 
 
 # routes
@@ -101,25 +135,21 @@ def query():
 @app.route("/update", methods=['GET', 'POST'])
 def update():
     # can query and update Database
-    return 'update'
-
-@app.route("/updateInfo", methods=['GET', 'POST'])
-def sms_reply():
-    """Respond to incoming calls with a simple text message."""
-    # Start our TwiML response
-    request_dict = dict(request.values)
+    # Step 1: Get Inforation
+    request_dict = request.get_json()
     print("Request dictionary: ", request_dict)
-    userId = request_dict['From']
-    message = request_dict['Body']
-    print("From: "+str(userId)+" Message: "+str(message))
+    print("Messages: ", request_dict['message'])
+    print("Phone number: ", request_dict['phone_number'])
 
-    resp = MessagingResponse()
-    output = chat(userId, message)
-    # need to send Andrew incoming_message and number
-    # Add a message
-    resp.message(output)
-
-    return str(resp)
+    # Step 2: Check if phone number is valid for making an update
+    check_phone_number_response = check_phone_number(request_dict['phone_number'], db)
+    
+    # Step 3: If phone number is valid, process their requests
+    if not check_phone_number_response[0]:
+        return check_phone_number_response[1]
+    else:
+        response = update_agent.invoke({"input": request_dict['message'], "phone_number": request_dict['phone_number']})
+        return response
 
 if __name__ == '__main__':
     # chat('1', 'My name is John')
