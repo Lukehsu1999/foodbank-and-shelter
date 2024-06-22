@@ -14,7 +14,6 @@ from langchain.chains import create_sql_query_chain
 from langchain_openai import ChatOpenAI
 from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
 from operator import itemgetter
-
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
@@ -24,6 +23,7 @@ from langchain_core.messages import SystemMessage
 from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
 
 import ast
+from twilio.twiml.messaging_response import MessagingResponse
 
 load_dotenv()
 LANGCHAIN_API_KEY = os.getenv('LANGCHAIN_API_KEY')
@@ -64,8 +64,10 @@ query_agent = create_sql_agent(
 
 # Update Agent will only assist verified providers in updating their information in database
 update_system_message = SystemMessage(
-    content="""You are an agent designed to interact with a SQL database.
+    content="""You are an agent designed to interact with a SQL database with table named Foodpantry.
+        Always tell the users that through this agent they can only access and edit their own social service institute information, they cannot edit or access other.
         Given an input question, create a syntactically correct SQLite query to run, then look at the results of the query and return the answer.
+        Only query into the table named Foodpantry, for other requests, tell them it's not supported.
         The input question will always end with a WHERE clause, when structuring the SQLite query, use the same WHERE clause without any additional filtering clauses
         """)
 
@@ -73,6 +75,7 @@ update_prompt = ChatPromptTemplate.from_messages(
     [
         update_system_message,
         ("human", "{input}"),
+        ("ai", "Hi, this is an agent design to keep your information updated. You can only edit and access your own information. Please let us know what you want to change."),
         MessagesPlaceholder("agent_scratchpad")
     ]
 )
@@ -150,7 +153,8 @@ def query():
 def update():
     # can query and update Database
     # Step 1: Get Inforation
-    request_dict = request.get_json()
+    #request_dict = request.get_json() for local testing
+    request_dict = dict(request.values) # for twilio
     phonenumber = request_dict['From']
     message = request_dict['Body']
     print("Request dictionary: ", request_dict)
@@ -162,15 +166,22 @@ def update():
     
     # Step 3: If phone number is valid, process their requests
     if not verified:
-        return res
+        resp = MessagingResponse()
+        resp.message("You do not have permission to edit the database")
+        return str(resp)
     else:
         print("Corresponding Entry to the number: ", res)
         # phone number restriction
         limitation_query = f"WHERE PhoneNumber = '{phonenumber}'"
-        print("Limitation query: ", limitation_query)
+        #print("Limitation query: ", limitation_query)
         response = update_agent.invoke({"input": message + limitation_query, "phone_number": phonenumber})
         stat, updated_results = get_foodpantry_by_phonenumber(phonenumber, db)
-        return str(response)+updated_results
+        
+        # for twilio
+        resp = MessagingResponse()
+        resp.message(str(response)+updated_results)
+        return str(resp)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True) # change host ='0.0.0.0' for EC2
+
