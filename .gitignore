@@ -1,6 +1,7 @@
 bobbyserverkey.pem
-Chinook_Sqlite.sql
-Chinook.db
+*.db
+*.sql
+.DS_Store
 titanic.csv
 titanic.db
 
