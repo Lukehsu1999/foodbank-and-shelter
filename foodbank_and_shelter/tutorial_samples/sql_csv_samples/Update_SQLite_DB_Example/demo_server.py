@@ -23,6 +23,8 @@ from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import SystemMessage
 from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
 
+import ast
+
 load_dotenv()
 LANGCHAIN_API_KEY = os.getenv('LANGCHAIN_API_KEY')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -64,6 +66,7 @@ query_agent = create_sql_agent(
 update_system_message = SystemMessage(
     content="""You are an agent designed to interact with a SQL database.
         Given an input question, create a syntactically correct SQLite query to run, then look at the results of the query and return the answer.
+        The input question will always end with a WHERE clause, when structuring the SQLite query, use the same WHERE clause without any additional filtering clauses
         """)
 
 update_prompt = ChatPromptTemplate.from_messages(
@@ -105,7 +108,7 @@ update_agent = create_sql_agent(
 # store = {}
 
 # support functions
-def verify_update_users(phone_number, db):
+def get_foodpantry_by_phonenumber(phone_number, db):
     print("Checking phone number: ", phone_number)
     # Define the SQL query to check if the phone number exists and get permissions
     query = f"SELECT * FROM Foodpantry WHERE PhoneNumber = '{phone_number}'"
@@ -113,6 +116,7 @@ def verify_update_users(phone_number, db):
     # Execute the query (assuming you have a function to execute queries and return results)
     results = db.run(query)
     print(results)
+    print(type(results))
     # Check if the phone number exists and has the necessary permissions
     if results:
 
@@ -121,10 +125,10 @@ def verify_update_users(phone_number, db):
         return False, "You do not have permission to edit the database."
 
 def format_query_results(results):
-    item = results[0] # assuming no shared phone number among food pantries
+    data_list = ast.literal_eval(results)
+    item = data_list[0] # assuming no shared phone number among food pantries
     print("item: ",item)
-    return results
-    return "Name: " + item[0] + ", Phone number: " + item[1] + ", Address: " + item[2] + ", Hours: " + item[3]  
+    return "Name: " + item[1] + "\n Phone number: " + item[4] + "\n Address: " + item[2] + "\n Hours: " + item[3]  
 
 # routes
 @app.route('/')
@@ -154,7 +158,7 @@ def update():
     print("Phone number: ", phonenumber)
 
     # Step 2: Check if phone number is valid for making an update
-    verified, res = verify_update_users(phonenumber, db)
+    verified, res = get_foodpantry_by_phonenumber(phonenumber, db)
     
     # Step 3: If phone number is valid, process their requests
     if not verified:
@@ -165,14 +169,8 @@ def update():
         limitation_query = f"WHERE PhoneNumber = '{phonenumber}'"
         print("Limitation query: ", limitation_query)
         response = update_agent.invoke({"input": message + limitation_query, "phone_number": phonenumber})
-        #updated_results = 
-        return response
+        stat, updated_results = get_foodpantry_by_phonenumber(phonenumber, db)
+        return str(response)+updated_results
 
 if __name__ == '__main__':
-    # chat('1', 'My name is John')
-    # chat('2', 'My name is Tim')
-    # chat('1', 'what is my name?')
-    # chat('2', 'what is my name?')
-    # print(get_session_history('1').messages)
-    # print(get_session_history('2').messages)
     app.run(host='0.0.0.0', port=8000, debug=True) # change host ='0.0.0.0' for EC2
