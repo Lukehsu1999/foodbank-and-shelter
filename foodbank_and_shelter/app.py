@@ -28,12 +28,14 @@ app = Flask(__name__)
 
 # global variables
 # store will store every key-value pair of user_id - chathistory
-model = ChatOpenAI()
+model = ChatOpenAI(
+    model="gpt-4o"
+)
 prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "Build an SMS chatbot for homeless people to find the nearest food center or taxes help or financial help or medical assistance. Use a session ID to remember users. Keep responses under 280 characters, clear, and helpful. Be kind, harmless, and filter any inappropriate content. Aim to assist quickly. When giving details on location, give phone number as well.",
+            "Build an SMS chatbot for homeless people in New York to find the nearest food pantries or taxes help or financial help or medical assistance. Keep responses under 280 characters, clear, and helpful. Be kind, harmless, and filter any inappropriate content. Aim to assist quickly. When giving details on location, give phone number as well. Answer factually, if you don't know, say I don't know.",
         ),
         MessagesPlaceholder(variable_name="history"),
         ("human", "{input}"),
@@ -114,4 +116,4 @@ if __name__ == '__main__':
     # chat('2', 'what is my name?')
     # print(get_session_history('1').messages)
     # print(get_session_history('2').messages)
-    app.run(debug=True)
+    app.run(debug=True, port=6000)
